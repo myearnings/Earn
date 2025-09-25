@@ -1,31 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Simple Admin Panel</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - User Management</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-    h1 { text-align: center; }
-    #userList { margin-top: 20px; }
-    .user-item { background: #fff; padding: 10px; margin: 5px 0; border: 1px solid #ccc; cursor: pointer; }
-    .detail { background: #fff; padding: 10px; border: 1px solid #ccc; margin-top: 10px; }
-    button { padding: 6px 12px; margin: 5px 0; }
+    body { margin:0; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#f5f6fa; color:#111; }
+    .header { display:flex; justify-content:space-between; align-items:center; padding:16px 24px; font-size:22px; font-weight:700; background:linear-gradient(135deg,#6a11cb,#2575fc); color:#fff; box-shadow:0 4px 8px rgba(0,0,0,0.1);}
+    .logout-btn { padding:8px 18px; border:none; border-radius:25px; background:#fff; color:#2575fc; cursor:pointer; font-size:14px; font-weight:600; transition: all 0.3s;}
+    .logout-btn:hover { background:#2575fc; color:#fff; transform:scale(1.05);}
+    .container { padding:20px; max-width:700px; margin:auto; }
+    .search-bar { width:75%; padding:14px 40px; font-size:16px; border-radius:30px; border:none; outline:none; margin-bottom:24px; background:#fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="%23888" viewBox="0 0 24 24"><path d="M21 20l-5.2-5.2a7.5 7.5 0 10-1 1L20 21zM5.5 10a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0z"/></svg>') no-repeat 16px center; background-size:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+    .user-list { display:flex; flex-direction:column; gap:16px;}
+    .user-item { display:flex; align-items:center; padding:14px 18px; border-radius:15px; background:#fff; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.05); transition: all 0.3s;}
+    .user-item:hover { background:#f0f4ff; transform:translateY(-2px); box-shadow:0 6px 12px rgba(0,0,0,0.1);}
+    .avatar { width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#6a11cb,#2575fc); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; margin-right:16px; font-size:18px; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.1);}
+    .user-info { display:flex; flex-direction:column; }
+    .username { font-size:17px; font-weight:600; margin-bottom:4px; color:#333; }
+    .balance { font-size:14px; color:#555; }
+    .user-detail { display:none; animation:fadeIn 0.4s ease-in-out; }
+    @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+    .back-btn { display:inline-block; margin-bottom:20px; padding:10px 18px; border:none; border-radius:25px; background:#2575fc; color:#fff; cursor:pointer; font-size:14px; font-weight:600; transition: all 0.3s;}
+    .back-btn:hover { background:#6a11cb; transform:scale(1.05);}
+    .detail-card { border-radius:20px; padding:25px; background:#fff; box-shadow:0 6px 16px rgba(0,0,0,0.08);}
+    .detail-card h2 { margin:0 0 12px 0; font-size:24px; color:#2575fc;}
+    .detail-card p { margin:8px 0; font-size:15px; color:#333; }
+    .balance-action-btn { padding:8px 14px; border:none; border-radius:8px; color:#fff; cursor:pointer; font-weight:600;}
+    .balance-action-btn.add { background:green; }
+    .balance-action-btn.remove { background:red; }
+    .action-container { margin-top:20px; display:flex; gap:10px; }
+
+    /* Modal */
+    .modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:999; }
+    .modal { background:#fff; border-radius:16px; padding:20px; width:300px; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,0.2);}
+    .modal input { width:80%; padding:10px; margin:15px 0; border-radius:8px; border:1px solid #ccc; font-size:16px; text-align:center;}
+    .modal button { padding:8px 18px; margin:5px; border:none; border-radius:8px; cursor:pointer; font-weight:600;}
+    .modal .confirm { background:#2575fc; color:#fff;}
+    .modal .cancel { background:#ccc; color:#000;}
   </style>
 </head>
 <body>
-  <h1>Admin Panel</h1>
-  <button id="logoutBtn">Logout</button>
+  <div class="header">
+    <div>User Management</div>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+  </div>
 
-  <div id="userList"></div>
+  <div class="container">
+    <div id="listSection">
+      <input type="text" id="searchInput" class="search-bar" placeholder="Search users...">
+      <div id="userList" class="user-list"></div>
+    </div>
 
-  <div id="userDetail" class="detail" style="display:none;">
-    <h3 id="detailUsername"></h3>
-    <p><b>Email:</b> <span id="detailEmail"></span></p>
-    <p><b>Balance:</b> $<span id="detailBalance"></span></p>
-    <button id="addBalanceBtn">Add Balance</button>
-    <button id="removeBalanceBtn">Remove Balance</button>
-    <button id="backBtn">Back to List</button>
+    <div id="detailSection" class="user-detail">
+      <button class="back-btn" id="backBtn">← Back</button>
+      <div class="detail-card">
+        <h2 id="detailUsername"></h2>
+        <p><b>Email:</b> <span id="detailEmail"></span></p>
+        <p><b>Balance:</b> <span id="detailBalance"></span></p>
+        <p><b>UID:</b> <span id="detailUid"></span></p>
+        <p><b>Last Active:</b> <span id="detailActive"></span></p>
+
+        <div class="action-container">
+          <button class="balance-action-btn add" id="addBalanceBtn">Add Balance</button>
+          <button class="balance-action-btn remove" id="removeBalanceBtn">Remove Balance</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-bg" id="modalBg">
+    <div class="modal">
+      <h3 id="modalTitle">Enter Amount</h3>
+      <input type="number" id="modalInput" placeholder="0.00" min="0">
+      <div>
+        <button class="confirm" id="modalConfirm">Confirm</button>
+        <button class="cancel" id="modalCancel">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <script type="module">
@@ -46,74 +98,92 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    const userListDiv = document.getElementById("userList");
-    const userDetailDiv = document.getElementById("userDetail");
+    const searchInput = document.getElementById("searchInput");
+    const userList = document.getElementById("userList");
+    const listSection = document.getElementById("listSection");
+    const detailSection = document.getElementById("detailSection");
+
     const detailUsername = document.getElementById("detailUsername");
     const detailEmail = document.getElementById("detailEmail");
     const detailBalance = document.getElementById("detailBalance");
-    const addBalanceBtn = document.getElementById("addBalanceBtn");
-    const removeBalanceBtn = document.getElementById("removeBalanceBtn");
+    const detailUid = document.getElementById("detailUid");
+    const detailActive = document.getElementById("detailActive");
+
     const backBtn = document.getElementById("backBtn");
     const logoutBtn = document.getElementById("logoutBtn");
+    const addBalanceBtn = document.getElementById("addBalanceBtn");
+    const removeBalanceBtn = document.getElementById("removeBalanceBtn");
+
+    const modalBg = document.getElementById("modalBg");
+    const modalInput = document.getElementById("modalInput");
+    const modalConfirm = document.getElementById("modalConfirm");
+    const modalCancel = document.getElementById("modalCancel");
+    const modalTitle = document.getElementById("modalTitle");
 
     let users = [];
-    let currentUserId = null;
+    let balanceAction = null;
 
     async function fetchUsers() {
       const snapshot = await getDocs(collection(db, "users"));
       users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      renderUsers();
+      renderUsers(users);
     }
 
-    function renderUsers() {
-      userListDiv.innerHTML = "";
-      users.forEach(u => {
-        const div = document.createElement("div");
-        div.className = "user-item";
-        const bal = (u.balance !== undefined && u.balance !== null) ? u.balance.toFixed(2) : "0.00";
-        div.textContent = `${u.username} - $${bal}`;
-        div.addEventListener("click", () => showUser(u.id));
-        userListDiv.appendChild(div);
+    function renderUsers(list) {
+      userList.innerHTML = "";
+      if (list.length === 0) return userList.innerHTML="<div style='padding:12px;color:gray;'>No users found</div>";
+      list.forEach(user => {
+        const div = document.createElement("div"); div.classList.add("user-item");
+        const avatar = document.createElement("div"); avatar.classList.add("avatar"); avatar.textContent=user.username?user.username.charAt(0).toUpperCase():"?";
+        const info = document.createElement("div"); info.classList.add("user-info");
+        const name = document.createElement("div"); name.classList.add("username"); name.textContent=user.username||"Unknown";
+        const balance = document.createElement("div"); balance.classList.add("balance");
+        const currency=user.currency||"$"; const bal=user.balance?`${currency}${user.balance.toLocaleString()}`:"N/A"; const date=user.lastActive||"Today";
+        balance.textContent=`Balance: ${bal} • ${date}`;
+        info.appendChild(name); info.appendChild(balance);
+        div.appendChild(avatar); div.appendChild(info);
+        div.addEventListener("click",()=>openUser(user.id));
+        userList.appendChild(div);
       });
     }
 
-    async function showUser(uid) {
-      const userDoc = await getDoc(doc(db, "users", uid));
-      if (!userDoc.exists()) return alert("User not found");
-      const u = userDoc.data();
-      currentUserId = uid;
-      detailUsername.textContent = u.username;
-      detailEmail.textContent = u.email;
-      detailBalance.textContent = (u.balance !== undefined && u.balance !== null) ? u.balance.toFixed(2) : "0.00";
-      userListDiv.style.display = "none";
-      userDetailDiv.style.display = "block";
+    async function openUser(uid){
+      const userDoc=await getDoc(doc(db,"users",uid));
+      if(userDoc.exists()){
+        const data=userDoc.data();
+        detailUsername.textContent=data.username||"Unknown";
+        detailEmail.textContent=data.email||"N/A";
+        detailBalance.textContent=data.balance?(data.currency||"$")+data.balance.toLocaleString():"N/A";
+        detailUid.textContent=uid;
+        detailActive.textContent=data.lastActive||"N/A";
+        listSection.style.display="none"; detailSection.style.display="block";
+      }
     }
 
-    async function changeBalance(amount) {
-      if (!currentUserId) return;
-      let value = parseFloat(prompt("Enter amount:", "0"));
-      if (isNaN(value) || value <= 0) return alert("Enter valid positive number");
-      if (amount < 0) value = -value;
+    backBtn.addEventListener("click",()=>{ detailSection.style.display="none"; listSection.style.display="block";});
+    searchInput.addEventListener("input",e=>renderUsers(users.filter(u=>(u.username||"").toLowerCase().includes(e.target.value.toLowerCase())||(u.email||"").toLowerCase().includes(e.target.value.toLowerCase()))));
+    logoutBtn.addEventListener("click",async()=>{ await signOut(auth); window.location.href="login.html"; });
 
-      const userRef = doc(db, "users", currentUserId);
-      const userSnap = await getDoc(userRef);
-      const currentBalance = userSnap.data().balance || 0;
-      await updateDoc(userRef, { balance: currentBalance + value });
-      detailBalance.textContent = (currentBalance + value).toFixed(2);
-      fetchUsers(); // refresh list
-    }
+    function showModal(action){ balanceAction=action; modalTitle.textContent=action==="add"?"Add Balance":"Remove Balance"; modalInput.value=""; modalBg.style.display="flex"; modalInput.focus(); }
+    addBalanceBtn.addEventListener("click",()=>showModal("add"));
+    removeBalanceBtn.addEventListener("click",()=>showModal("remove"));
+    modalCancel.addEventListener("click",()=>modalBg.style.display="none");
 
-    addBalanceBtn.addEventListener("click", () => changeBalance(1));
-    removeBalanceBtn.addEventListener("click", () => changeBalance(-1));
-
-    backBtn.addEventListener("click", () => {
-      userDetailDiv.style.display = "none";
-      userListDiv.style.display = "block";
-    });
-
-    logoutBtn.addEventListener("click", async () => {
-      await signOut(auth);
-      window.location.href = "login.html";
+    modalConfirm.addEventListener("click",async()=>{
+      const amount=parseFloat(modalInput.value);
+      if(isNaN(amount)||amount<=0)return alert("Enter a valid amount");
+      const userRef=doc(db,"users",detailUid.textContent);
+      try{
+        const userSnap=await getDoc(userRef);
+        if(!userSnap.exists()) return alert("User not found!");
+        let currentBalance=userSnap.data().balance||0;
+        if(balanceAction==="add") currentBalance+=amount;
+        if(balanceAction==="remove") currentBalance=Math.max(0,currentBalance-amount);
+        await updateDoc(userRef,{balance:currentBalance});
+        detailBalance.textContent=`$${currentBalance.toLocaleString()}`;
+        modalBg.style.display="none";
+        alert(`Balance ${balanceAction==="add"?"added":"removed"} successfully!`);
+      } catch(e){ console.error(e); alert("Error updating balance"); }
     });
 
     fetchUsers();
