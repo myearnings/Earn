@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h1 { text-align: center; }
+    #userList { margin-top: 20px; }
+    .user-item { background: #fff; padding: 10px; margin: 5px 0; border: 1px solid #ccc; cursor: pointer; }
+    .detail { background: #fff; padding: 10px; border: 1px solid #ccc; margin-top: 10px; }
+    button { padding: 6px 12px; margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <h1>Admin Panel</h1>
+  <button id="logoutBtn">Logout</button>
+
+  <div id="userList"></div>
+
+  <div id="userDetail" class="detail" style="display:none;">
+    <h3 id="detailUsername"></h3>
+    <p><b>Email:</b> <span id="detailEmail"></span></p>
+    <p><b>Balance:</b> $<span id="detailBalance"></span></p>
+    <button id="addBalanceBtn">Add Balance</button>
+    <button id="removeBalanceBtn">Remove Balance</button>
+    <button id="backBtn">Back to List</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7jRsPTSve6H90QTp-4ppw9bfMCDWpazY",
+      authDomain: "fresh-ebc69.firebaseapp.com",
+      projectId: "fresh-ebc69",
+      storageBucket: "fresh-ebc69.firebasestorage.app",
+      messagingSenderId: "344595872793",
+      appId: "1:344595872793:web:193599372d759322b87e88"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const userListDiv = document.getElementById("userList");
+    const userDetailDiv = document.getElementById("userDetail");
+    const detailUsername = document.getElementById("detailUsername");
+    const detailEmail = document.getElementById("detailEmail");
+    const detailBalance = document.getElementById("detailBalance");
+    const addBalanceBtn = document.getElementById("addBalanceBtn");
+    const removeBalanceBtn = document.getElementById("removeBalanceBtn");
+    const backBtn = document.getElementById("backBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    let users = [];
+    let currentUserId = null;
+
+    async function fetchUsers() {
+      const snapshot = await getDocs(collection(db, "users"));
+      users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      renderUsers();
+    }
+
+    function renderUsers() {
+      userListDiv.innerHTML = "";
+      users.forEach(u => {
+        const div = document.createElement("div");
+        div.className = "user-item";
+        const bal = (u.balance !== undefined && u.balance !== null) ? u.balance.toFixed(2) : "0.00";
+        div.textContent = `${u.username} - $${bal}`;
+        div.addEventListener("click", () => showUser(u.id));
+        userListDiv.appendChild(div);
+      });
+    }
+
+    async function showUser(uid) {
+      const userDoc = await getDoc(doc(db, "users", uid));
+      if (!userDoc.exists()) return alert("User not found");
+      const u = userDoc.data();
+      currentUserId = uid;
+      detailUsername.textContent = u.username;
+      detailEmail.textContent = u.email;
+      detailBalance.textContent = (u.balance !== undefined && u.balance !== null) ? u.balance.toFixed(2) : "0.00";
+      userListDiv.style.display = "none";
+      userDetailDiv.style.display = "block";
+    }
+
+    async function changeBalance(amount) {
+      if (!currentUserId) return;
+      let value = parseFloat(prompt("Enter amount:", "0"));
+      if (isNaN(value) || value <= 0) return alert("Enter valid positive number");
+      if (amount < 0) value = -value;
+
+      const userRef = doc(db, "users", currentUserId);
+      const userSnap = await getDoc(userRef);
+      const currentBalance = userSnap.data().balance || 0;
+      await updateDoc(userRef, { balance: currentBalance + value });
+      detailBalance.textContent = (currentBalance + value).toFixed(2);
+      fetchUsers(); // refresh list
+    }
+
+    addBalanceBtn.addEventListener("click", () => changeBalance(1));
+    removeBalanceBtn.addEventListener("click", () => changeBalance(-1));
+
+    backBtn.addEventListener("click", () => {
+      userDetailDiv.style.display = "none";
+      userListDiv.style.display = "block";
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.href = "login.html";
+    });
+
+    fetchUsers();
+  </script>
+</body>
+</html>
